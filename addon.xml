@@ -2,8 +2,10 @@
 <addon id="plugin.video.quantum" name="Quantum" version="0.0.1~alpha" provider-name="hunter24957">
 	<requires>
 		<import addon="xbmc.python" version="2.14.0"/>
+		<import addon="script.module.requests" version="2.12.4"/>
+		<import addon="script.module.beautifulsoup4", version="4.3.2"/>
 	</requires>
-	<extension point="xbmc.addon.video" library="quantum.py">
+	<extension point="xbmc.python.pluginsource" library="quantum.py">
 		<provides>video</provides>
 	</extension>
 	<extension point="xbmc.addon.metadata">
@@ -19,8 +21,8 @@
 		<source></source>
 		<news></news>
 		<assets>
-			<icon>icon.jpg</icon>
-			<fanart></fanart>
+			<icon>resources/icon.jpg</icon>
+			<fanart>resources/fanart.jpg</fanart>
 			<screenshot></screenshot>
 		</assets>
 	</extension>
