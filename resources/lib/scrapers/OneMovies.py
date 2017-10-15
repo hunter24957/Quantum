@@ -17,14 +17,14 @@ class OneMovies:
 		# iterates through movies
 		for movie in results_movies.find_all('div', {'class': 'poster new'}):
 			# if the title is equal to the title arg and year is equal to the year arg
-			if title in movie['data-name'].strip() and movie['data-year'].strip() == year:
+			if title in movie['data-name'].strip().lower() and movie['data-year'].strip() == year:
 				# return the link to the movie
 				return 'https://1movies.online' + movie['data-href']
 
 	@staticmethod # Takes a movie title and returns a link to the stream
 	def get_movie_stream_url(title, year, series=False, episode=None):
 		# gets the movie page url
-		movie_url = OneMovies.get_movie_page_url(title.strip(), year.strip(), series)
+		movie_url = OneMovies.get_movie_page_url(title.strip().lower(), year.strip(), series)
 		# if it is a series get the episode url
 		if series: movie_url = '-'.join(OneMovies.get_episode_url(show_url, episode).split('-')[:-3])
 		# if we have a link
@@ -55,7 +55,7 @@ class OneMovies:
 
 if __name__ == '__main__':
 	# gets a link to a movie stream
-	stream_url = OneMovies.get_movie_stream_url(title='War for the Planet of the Apes', year='2017')
+	stream_url = OneMovies.get_movie_stream_url(title='It', year='2017')
 	# prints the stream url
 	print(stream_url)
 	# waits to exit

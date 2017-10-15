@@ -10,17 +10,19 @@ class TMDB:
 	api_key = 'efd7b2c16b633d58a353a0be86269bab'
 	# the current api domain
 	api_domain = 'http://api.tmdb.org/3'
+	# sets the path and resolution of the images
+	img_path = 'https://image.tmdb.org/t/p/w1280/'
 
-	@staticmethod # gets the most popular movies
-	def get_popular_movies(page=1):
-		# stores our popular movies
-		popular_movies = list()
+	@staticmethod # returns movies filtered by category
+	def get_movies(category='popular', page=1):
+		# stores our found movies
+		found_movies = list()
 		# creates search params
-		popular_params = {'api_key': TMDB.api_key, 'page': page}
+		search_params = {'api_key': TMDB.api_key, 'page': page}
 		# gets results from api
-		popular_results = requests.get(TMDB.api_domain + '/movie/popular', params=popular_params).json()
+		search_results = requests.get(TMDB.api_domain + '/movie/' + category, params=search_params).json()
 		# iterates through results
-		for movie in popular_results['results']:
+		for movie in search_results['results']:
 			# creates a movie instance
 			newMovie = Movie(
 				# adds our movie title
@@ -32,14 +34,63 @@ class TMDB:
 				# adds our movie rating
 				movie['vote_average'],
 				# adds our movie poster
-				'https://image.tmdb.org/t/p/w1920/' + str(movie['poster_path']),
+				TMDB.img_path + str(movie['poster_path']),
 				# adds our movie backdrop
-				'https://image.tmdb.org/t/p/w1920/' + str(movie['backdrop_path'])
+				TMDB.img_path + str(movie['backdrop_path'])
 			)
 			# adds movie to our list
-			popular_movies.append(newMovie)
-		# returns our popular movies list
-		return popular_movies
+			found_movies.append(newMovie)
+		# returns our found movies list
+		return found_movies
+
+	@staticmethod # filters movies by year
+	def get_movies_by_year(year=2000, page=1):
+		# stores our found movies
+		found_movies = list()
+		# creates search params
+		search_params = {'api_key': TMDB.api_key, 'year': year, 'sort_by': 'popularity.desc', 'page': page}
+		# gets results from api
+		search_results = requests.get(TMDB.api_domain + '/discover/movie', params=search_params).json()
+		# iterates through results
+		for movie in search_results['results']:
+			# creates a movie instance
+			newMovie = Movie(
+				# adds our movie title
+				movie['title'],
+				# adds our movie overview
+				movie['overview'],
+				# adds our movie date
+				movie['release_date'],
+				# adds our movie rating
+				movie['vote_average'],
+				# adds our movie poster
+				img_path + str(movie['poster_path']),
+				# adds our movie backdrop
+				img_path + str(movie['backdrop_path'])
+			)
+			# adds movie to our list
+			found_movies.append(newMovie)
+		# returns our found movies list
+		return found_movies
+
+	@staticmethod
+	def get_genres():
+		# stores our found genres
+		found_genres = dict()
+		# creates search params
+		search_params = {'api_key': TMDB.api_key}
+		# gets results from api
+		search_results = requests.get(TMDB.api_domain + '/genre/movie/list', params=search_params).json()
+		# iterates through genres
+		for genre in search_results['genres']:
+			# gets the id
+			genre_id = genre['id']
+			# gets the name
+			genre_name = genre['name']
+			# adds genre id to our dict
+			found_genres[genre_name] = genre_id
+		# returns our found genres dict
+		return found_genres
 
 if __name__ == '__main__':
 	# gets page two of the most popular movies

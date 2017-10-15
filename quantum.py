@@ -1,99 +1,84 @@
+# this script will deal with the parameters passed into our addon
 import sys
-from urllib import urlencode
 from urlparse import parse_qsl
-import xbmc
-import xbmcgui
-import xbmcplugin
-import xbmcaddon
+
+# imports our scrapers and modules
 from resources.lib.scrapers.OneMovies import OneMovies
 from resources.lib.scrapers.TMDB import TMDB
+from resources.lib.modules.UI import UI
 
-# gets addon, addon name and icon
-__addon__ = xbmcaddon.Addon()
-__addonname__ = __addon__.getAddonInfo('name')
-__icon__ = __addon__.getAddonInfo('icon')
-# gets addon handle
-__handle__ = int(sys.argv[1])
-# gets the addon base address
-__addr__ = sys.argv[0]
+# class for storing a menu item actions
+class MenuItem:
+	# initalizes our menu item
+	def __init__(self, title, action, icon='\\resources\\media\\icon2.jpg'):
+		# sets up our attributes
+		self.title = title
+		self.action = action
+		self.icon = icon
 
-# creates actions
-actions = {'Movies': TMDB.get_popular_movies}
 
-# creates main menu
-def init_main_menu(*args):
-	# sets the title of the category
-	xbmcplugin.setPluginCategory(__handle__, 'Menu')
-	# sets the content of this category
-	xbmcplugin.setContent(__handle__, 'movies')
-	# iterates through categories
-	for category in args:
-		# creates a list item
-		category_item = xbmcgui.ListItem(category)
-		# sets images
-		category_item.setArt({'thumb': 'movie.poster', 'icon': 'movie.poster', 'fanart': 'movie.backdrop'})
-		# adds list item as directory
-		xbmcplugin.addDirectoryItem(__handle__, create_params(action='listing', category=category, page=1), category_item, True)
-	# sorts the categories
-	xbmcplugin.addSortMethod(__handle__, xbmcplugin.SORT_METHOD_VIDEO_TITLE)
-	# ends the directory
-	xbmcplugin.endOfDirectory(__handle__)
+# GETS MOVIE GENRES TO BE USED LATER
+movie_genres = TMDB.get_genres()
 
-# creates a category
-def init_category(title, category='movies', *args):
-	# sets the title of the category
-	xbmcplugin.setPluginCategory(__handle__, title)
-	# sets the content of this category
-	xbmcplugin.setContent(__handle__, category)
-	# iterates through movies
-	for movie in args:
-		# creates a list item
-		category_item = xbmcgui.ListItem(movie.title)
-		# sets images
-		category_item.setArt({'thumb': movie.poster, 'icon': movie.poster, 'fanart': movie.backdrop})
-		# sets the list item info
-		category_item.setInfo('video', {'title': movie.title, 'genre': movie.overview})
-		# adds list item as directory
-		xbmcplugin.addDirectoryItem(__handle__, create_params(action='play', title=movie.title, date=movie.date), category_item)
-	# creates a next page button
-	category_item = xbmcgui.ListItem('Next Page')
-	# sets images
-	# category_item.setArt({'thumb': movie.poster, 'icon': movie.poster, 'fanart': movie.backdrop})
-	# adds list item as directory
-	xbmcplugin.addDirectoryItem(__handle__, create_params(action='listing', category=title, page=3), category_item, True)
-	# ends the directory
-	xbmcplugin.endOfDirectory(__handle__)
+# CONTAINS OUR UI CATEGORIES WITH THEIR SELECTIONS
+categories = {
+	'Menu': (
+		MenuItem('Movies', 'create_menu'),
+		MenuItem('Television', 'create_menu')
+	),
+	'Movies': (
+		MenuItem('Popular', 'create_page'),
+		MenuItem('Top Rated', 'create_page'),
+		MenuItem('Now Playing', 'create_page'),
+		MenuItem('Upcoming', 'create_page'),
+		MenuItem('Genres', 'create_menu'),
+		MenuItem('Year', 'create_menu')
+	),
+	'Television': (
+		MenuItem('Popular', 'create_page'),
+		MenuItem('Top Rated', 'create_page'),
+		MenuItem('Now Playing', 'create_page'),
+		MenuItem('Upcoming', 'create_page'),
+		MenuItem('Genres', 'create_menu'),
+		MenuItem('Year', 'create_menu')
+	),
+	'Genres': set((genre, 'create_page') for genre in movie_genres.keys()),
+	'Year': set((str(year), 'create_page') for year in xrange(2018, 1900, -1))
+	}
 
-# parses parameters
-def create_params(**kwargs):
-	# returns addon launch parameters
-    return '{0}?{1}'.format(__addr__, urlencode(kwargs))
-
-# parses parameters
-def check_params(params):
-	# if params exits
+# KODI WORKS BY CALLING OUR ADDON WHEN A USER CLICKS IT
+# THE ADDONS SETS THE STATES (SETS UP UI) THEN CALLS KODI
+# WHEN A USER INTERACT KODI CALLS OUR ADDON WITH PARAMETERS THAT WE WILL PARSE HERE
+def parse_parameters(params):
+	# if there is any parameters
 	if params:
-		# if the action is listing
-		if params['action'] == 'listing':
-			# gets page one of the most popular movies
-			movies = actions[params['category']](params['page'])
-			# creates our category
-			init_category(params['category'], 'movies', *movies)
-		# if the action is play a movie
-		if params['action'] == 'play':
-			# sest movie url to none
-			movie_url = None
-			# loops while movie url is none
-			while not movie_url:
-				# invokes scraper
-				movie_url = OneMovies.get_movie_stream_url(title=params['title'], year=params['date'].split('-')[0])
-			# plays movie
-			xbmc.Player().play(item=movie_url)
-	else:
-		# creates our main menu
-		init_main_menu('Movies', 'Television')
-
+		# if this is a create_menu action for us to perform
+		if params['action'] == 'create_menu':
+			# gets our category destination
+			category = params['destination']
+			# build our new menu
+			interface.build_menu(category, *categories[category])
+		# if this is a create_page action for us to perform
+		elif params['action'] == 'create_page':
+			# gets our category destination
+			category = params['destination']
+			# gets our page number to build
+			page_number = params['page_number']
+			# build our new page
+			interface.build_page(category, page_number, 'movies', *TMDB.get_movies('_'.join(category.split()).lower()))
+		# if this is a play media action for us to perform
+		elif params['action'] == 'play_media':
+			# here we play the media the user has chosen
+			pass
+	# else we create our main menu (application has been launched)
+	else: interface.build_menu('Menu', *categories['Menu'])
 
 if __name__ == '__main__':
+	# gets addon handle
+	addon_handle = int(sys.argv[1])
+	# gets the addon base address
+	base_address = sys.argv[0]
+	# instantiates our UI with our addon handle and base address
+	interface = UI(handle=addon_handle, address=base_address)
 	# checks the passed parameters
-	check_params(dict(parse_qsl(sys.argv[2][1:])))
+	parse_parameters(params=dict(parse_qsl(sys.argv[2][1:])))
