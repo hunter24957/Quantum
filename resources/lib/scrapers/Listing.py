@@ -1,6 +1,6 @@
-# class that contains movie details
-class Movie:
-	# instantiates our movie class
+# class that contains listing details
+class Listing:
+	# instantiates our listing class
 	def __init__(self, title, overview, date, rating, poster, backdrop):
 		# sets up class attributes
 		self.title = title
