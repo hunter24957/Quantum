@@ -6,6 +6,7 @@ Most of the "free" movie streaming addons for Kodi nowadays are ripped off, half
 
 ## Screenshots
 <img src="resources/media/screenshot3.png" width="400" hspace="20"><img src="resources/media/screenshot4.png" width="400" hspace="20">
+<img src="resources/media/screenshot5.png" width="400" hspace="20"><img src="resources/media/screenshot1.png" width="400" hspace="20">
 
 ## Disclaimer
 This is in pre-alpha development, use at your own risk.
