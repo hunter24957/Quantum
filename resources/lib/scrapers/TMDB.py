@@ -1,7 +1,7 @@
 # imports requests
 import requests
 # imports our movie class
-from Listing import Listing, Season, Episode
+from resources.lib.modules.UI import *
 
 # A class that gets movie and tv listing from the TMDB api
 class TMDB:
@@ -274,7 +274,7 @@ class TMDB:
 		return found_listings
 
 	@staticmethod # filters listings by seasons
-	def get_shows_seasons(show_id):
+	def get_show_seasons(show_id):
 		# stores our found listings
 		found_listings = set()
 		# creates search params

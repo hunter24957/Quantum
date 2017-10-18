@@ -7,18 +7,52 @@ import xbmcgui
 import xbmcplugin
 import xbmcaddon
 
-from resources.lib.scrapers.TMDB import TMDB
-from datetime import datetime
-
 # class for storing a menu item actions
 class MenuItem:
 	# initalizes our menu item
-	def __init__(self, title, action, function, icon='\\resources\\media\\icon.jpg'):
+	def __init__(self, title, action, icon='icon.png'):
 		# sets up our attributes
 		self.title = title
 		self.action = action
-		self.function = function
 		self.icon = icon
+
+# class that contains listing details
+class Listing:
+	# instantiates our listing class
+	def __init__(self, iden, title, overview, date, rating, poster, backdrop):
+		# sets up class attributes
+		self.id = iden
+		self.title = title
+		self.overview = overview
+		self.date = date
+		self.rating = rating
+		self.poster = poster
+		self.backdrop = backdrop
+
+# class that contains season details
+class Season:
+	# instantiates our season class
+	def __init__(self, number, iden, title, overview, date, poster):
+		# sets up class attributes
+		self.number = number
+		self.id = iden
+		self.title = title
+		self.overview = overview
+		self.date = date
+		self.poster = poster
+
+# class that contains episode details
+class Episode:
+	# instantiates our episode class
+	def __init__(self, number, iden, title, overview, date, rating, poster):
+		# sets up class attributes
+		self.number = number
+		self.id = iden
+		self.title = title
+		self.overview = overview
+		self.date = date
+		self.rating = rating
+		self.poster = poster
 
 # class contains UI methods
 class UI:
@@ -42,26 +76,27 @@ class UI:
 			category_item = xbmcgui.ListItem(category.title)
 			# sets images
 			category_item.setArt({
-				'thumb': self.path + category.icon,
+				'thumb': self.path + '\\resources\\media\\' + category.icon,
 				#'icon': self.path + category.icon,
-				#'fanart': self.path + category.icon,
+				'fanart': self.path + '\\resources\\media\\fanart.jpg',
 			})
 			# adds list item as directory
 			xbmcplugin.addDirectoryItem(
 				# adds our application handle
 				self.handle,
 				# where we're doign and where we're going
-				self.create_params(action=category.action, title=category.title, function=category.function, page=1),
+				self.create_params(action=category.action, title=category.title, page=1),
 				# adds our created item
 				category_item,
 				# THIS IS A FOLDER!
 				True
 			)
+		xbmc.executebuiltin("Container.SetViewMode(500)")
 		# ends the directory
 		xbmcplugin.endOfDirectory(self.handle)
 
 	# creates a page
-	def build_movie_page(self, title, function, page, *args):
+	def build_movie_page(self, title, action, page, *args):
 		# sets the title of the category
 		xbmcplugin.setPluginCategory(self.handle, title)
 		# sets the content of this category
@@ -75,20 +110,16 @@ class UI:
 			# sets the list item info
 			category_item.setInfo('video', {'title': movie.title, 'plot': movie.overview, 'year': movie.date.split('-')[0], 'rating': movie.rating})
 			# adds list item as directory
-			xbmcplugin.addDirectoryItem(self.handle, self.create_params(action='play_media', title=UI.make_printable(movie.title), date=movie.date), category_item)
-		# creates a next page button
-		category_item = xbmcgui.ListItem('Next Page')
-		# increments page
-		page = int(page) + 1
-		# adds list item as directory
-		xbmcplugin.addDirectoryItem(self.handle, self.create_params(action='build_movie_page', title=title, function=function, page=page), category_item, True)
-		# sorts our listings by title (ignores "the")
-		xbmcplugin.addSortMethod(self.handle, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE)
+			xbmcplugin.addDirectoryItem(self.handle, self.create_params(action='movie.play', title=UI.make_printable(movie.title), date=movie.date), category_item)
+		# builds a next page button
+		self.build_next_page_button(action, title, page)
+		# sets the view to wall
+		xbmc.executebuiltin('Container.SetViewMode(500)') 
 		# ends the directory
 		xbmcplugin.endOfDirectory(self.handle)
 
 	# creates a page
-	def build_tv_page(self, title, function, page, *args):
+	def build_tv_page(self, title, action, page, *args):
 		# sets the title of the category
 		xbmcplugin.setPluginCategory(self.handle, title)
 		# sets the content of this category
@@ -102,15 +133,11 @@ class UI:
 			# sets the list item info
 			category_item.setInfo('video', {'title': show.title, 'plot': show.overview, 'year': show.date.split('-')[0], 'rating': show.rating})
 			# adds list item as directory
-			xbmcplugin.addDirectoryItem(self.handle, self.create_params(action='build_series_page', title=UI.make_printable(show.title), id=show.id, backdrop=show.backdrop), category_item, True)
-		# creates a next page button
-		category_item = xbmcgui.ListItem('Next Page')
-		# increments page
-		page = int(page) + 1
-		# adds list item as directory
-		xbmcplugin.addDirectoryItem(self.handle, self.create_params(action='build_tv_page', title=title, function=function, page=page), category_item, True)
-		# sorts our listings by title (ignores "the")
-		xbmcplugin.addSortMethod(self.handle, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE)
+			xbmcplugin.addDirectoryItem(self.handle, self.create_params(action='tv.season', title=UI.make_printable(show.title), id=show.id, backdrop=show.backdrop), category_item, True)
+		# builds a next page button
+		self.build_next_page_button(action, title, page)
+		# sets the view to wall
+		xbmc.executebuiltin('Container.SetViewMode(500)')
 		# ends the directory
 		xbmcplugin.endOfDirectory(self.handle)
 
@@ -129,9 +156,9 @@ class UI:
 			# sets the list item info
 			category_item.setInfo('video', {'title': season.title, 'plot': season.overview, 'year': str(season.date).split('-')[0]})
 			# adds list item as directory
-			xbmcplugin.addDirectoryItem(self.handle, self.create_params(action='build_episode_page', title=UI.make_printable(season.title), id=iden, season=season.number, backdrop=backdrop), category_item, True)
-		# sorts our listings by title (ignores "the")
-		xbmcplugin.addSortMethod(self.handle, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE)
+			xbmcplugin.addDirectoryItem(self.handle, self.create_params(action='tv.episodes', title=UI.make_printable(season.title), id=iden, season=season.number, backdrop=backdrop), category_item, True)
+		# sets the view to wall
+		xbmc.executebuiltin('Container.SetViewMode(500)')
 		# ends the directory
 		xbmcplugin.endOfDirectory(self.handle)
 
@@ -150,9 +177,9 @@ class UI:
 			# sets the list item info
 			category_item.setInfo('video', {'title': episode.title, 'plot': episode.overview, 'year': episode.date.split('-')[0], 'rating': episode.rating})
 			# adds list item as directory
-			xbmcplugin.addDirectoryItem(self.handle, self.create_params(action='play_media', title=UI.make_printable(episode.title), date=episode.date), category_item)
-		# sorts our listings by title (ignores "the")
-		xbmcplugin.addSortMethod(self.handle, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE)
+			xbmcplugin.addDirectoryItem(self.handle, self.create_params(action='tv.play', title=UI.make_printable(episode.title), date=episode.date), category_item)
+		# sets the view to wall
+		xbmc.executebuiltin('Container.SetViewMode(500)')
 		# ends the directory
 		xbmcplugin.endOfDirectory(self.handle)
 
@@ -165,6 +192,17 @@ class UI:
 		if (kb.isConfirmed()):
 			# returns the text entered
 			return kb.getText()
+
+	# builds a next page button
+	def build_next_page_button(self, action, title, page):
+		# creates a next page button
+		category_item = xbmcgui.ListItem('Next Page')
+		# sets the list item info
+		category_item.setArt({'fanart': self.path + '\\resources\\media\\fanart.jpg'})
+		# increments page
+		page = int(page) + 1
+		# adds list item as directory
+		xbmcplugin.addDirectoryItem(self.handle, self.create_params(action=action, title=title, page=page), category_item, True)
 
 	# creates base parameters
 	def create_params(self, **kwargs):

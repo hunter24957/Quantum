@@ -8,141 +8,206 @@ from resources.lib.scrapers.OneMovies import OneMovies
 from resources.lib.scrapers.TMDB import TMDB
 from resources.lib.modules.UI import UI, MenuItem
 
-# stores movie genres for indexing
-movie_genres = TMDB.get_genres('movie')
-# stores tv genres for indexing
-tv_genres = TMDB.get_genres('tv')
-# stores our methods as strings for indexing
-actions = {
-'get_movies_by_category': TMDB.get_movies_by_category,
-'get_movies_by_year': TMDB.get_movies_by_year,
-'get_movies_by_genre': TMDB.get_movies_by_genre,
-'get_shows_by_category': TMDB.get_shows_by_category,
-'get_shows_by_year': TMDB.get_shows_by_year,
-'get_shows_by_genre': TMDB.get_shows_by_genre,
-#'search_people': TMDB.search_people,
-'search_movies': TMDB.search_movies,
-'search_shows': TMDB.search_shows,
-}
-
-# THIS IS A WORK IN PROGRESS LAYOUT OF THE ADDON
-# THE CLASS STORES EACH SECTIONS BUTTONS AND WHAT ACTION THEY TRIGGER
-layout = {
-	'main.menu': (
-		# adds movie selection
-		MenuItem('Movies', 'build_menu', 'menu.movie'),
-		# adds television selection
-		MenuItem('Television', 'build_menu', 'menu.tv'),
-		# adds search selection
-		MenuItem('Search People', 'build_text', 'search_people')
-		),
-	'menu.movie': (
-		# adds popular selection
-		MenuItem('Popular', 'build_movie_page', 'get_movies_by_category'),
-		# adds top rated selection
-		MenuItem('Top Rated', 'build_movie_page', 'get_movies_by_category'),
-		# adds now playing selection
-		MenuItem('Now Playing', 'build_movie_page', 'get_movies_by_category'),
-		# adds upcoming selection
-		MenuItem('Upcoming', 'build_movie_page', 'get_movies_by_category'),
-		# adds genres selection
-		MenuItem('Genres', 'build_menu', 'movie.genres'),
-		# adds years selection
-		MenuItem('Years', 'build_menu', 'movie.years'),
-		# adds search selection
-		MenuItem('Search', 'build_text', 'search_movies')
-		),
-	'menu.tv': (
-		# adds popular selection
-		MenuItem('Popular', 'build_tv_page', 'get_shows_by_category'),
-		# adds top rated selection
-		MenuItem('Top Rated', 'build_tv_page', 'get_shows_by_category'),
-		# adds now playing selection
-		MenuItem('Now Playing', 'build_tv_page', 'get_shows_by_category'),
-		# adds upcoming selection
-		MenuItem('Upcoming', 'build_tv_page', 'get_shows_by_category'),
-		# adds genres selection
-		MenuItem('Genres', 'build_menu', 'tv.genres'),
-		# adds years selection
-		MenuItem('Years', 'build_menu', 'tv.years'),
-		# adds search selection
-		MenuItem('Search', 'build_text', 'search_shows')
-		),
-	'movie.genres': tuple(
-		# build our genre selection items
-		MenuItem(genre, 'build_movie_page', 'get_movies_by_genre') for genre in movie_genres.keys()
-		),
-	'movie.years': tuple(
-		# build our year selection items
-		MenuItem(str(year), 'build_movie_page', 'get_movies_by_year') for year in xrange(datetime.now().year, 1900, -1)
-		),
-	'tv.genres': tuple(
-		# build our genre selection items
-		MenuItem(genre, 'build_tv_page', 'get_shows_by_genre') for genre in tv_genres.keys()
-		),
-	'tv.years': tuple(
-		# build our year selection items
-		MenuItem(str(year), 'build_tv_page', 'get_shows_by_year') for year in xrange(datetime.now().year, 1900, -1)
-		),
-}
-
 # KODI WORKS BY CALLING OUR ADDON WHEN A USER CLICKS IT
 # THE ADDONS SETS THE STATES (SETS UP UI) THEN CALLS KODI
 # WHEN A USER INTERACT KODI CALLS OUR ADDON WITH PARAMETERS THAT WE WILL PARSE HERE
 
-# THIS FUNCTION WILL PARSE THE PARAMETERS GIVEN
-def parse_parameters(params):
-	# if there are existent parameters
-	if params:
-		# checks the passed parameters
-		if params['action'] == 'build_menu':
-			# builds the given menu
-			GUI.build_menu(params['title'], *layout[params['function']])
-		# checks the passed parameters
-		elif params['action'] == 'build_movie_page':
-			# extracts function from actions
-			get_listings = actions[params['function']]
-			# gets listings of category
-			listings = get_listings(params['title'], params['page'])
-			# builds a page with the listings
-			GUI.build_movie_page(params['title'], params['function'], params['page'], *listings)
-		# checks the passed parameters
-		elif params['action'] == 'build_tv_page':
-			# extracts function from actions
-			get_listings = actions[params['function']]
-			# gets listings of category
-			listings = get_listings(params['title'], params['page'])
-			# builds a page with the listings
-			GUI.build_tv_page(params['title'], params['function'], params['page'], *listings)
-		# checks the passed parameters
-		elif params['action'] == 'build_series_page':
-			# gets listings of category
-			listings = TMDB.get_shows_seasons(params['id'])
-			# builds a page with the listings
-			GUI.build_series_page(params['title'], params['id'], params['backdrop'], *listings)
-		# checks the passed parameters
-		elif params['action'] == 'build_episode_page':
-			# gets listings of category
-			listings = TMDB.get_season_episodes(params['id'], params['season'])
-			# builds a page with the listings
-			GUI.build_episode_page(params['title'], params['backdrop'], *listings)
-		# checks the passed parameters
-		elif params['action'] == 'build_text':
-			# extracts function from actions
-			get_listings = actions[params['function']]
-			# gets user input
-			search_term = GUI.text_entry(params['title'])
-			# gets listings of category
-			listings = get_listings(search_term, params['page'])
-	# else we build the main menu
-	else: GUI.build_menu('Menu', *layout['main.menu'])
+# gets addon handle
+addon_handle = int(sys.argv[1])
+# gets the addon base address
+base_address = sys.argv[0]
+# instantiates our UI with our addon handle and base address
+GUI = UI(addon_handle, base_address)
+# passed decoded parameters into the parser
+params = dict(parse_qsl(sys.argv[2][1:]))
 
-if __name__ == '__main__':
-	# gets addon handle
-	addon_handle = int(sys.argv[1])
-	# gets the addon base address
-	base_address = sys.argv[0]
-	# instantiates our UI with our addon handle and base address
-	GUI = UI(addon_handle, base_address)
-	# passed decoded parameters into the parser
-	parse_parameters(dict(parse_qsl(sys.argv[2][1:])))
+# builds the main menu
+if not params:
+	# creates our menu
+	menu = (
+		# adds movie selection
+		MenuItem('Movies', 'menu.movies'),
+		# adds television selection
+		MenuItem('Television', 'menu.tv'),
+		# adds search selection
+		# MenuItem('Search People', 'build_text', 'search_people')
+	)
+	# builds our menu
+	GUI.build_menu('Menu', *menu)
+
+# builds the movie menu
+elif params['action'] == 'menu.movies':
+	# creates our menu
+	menu = (
+		# adds popular selection
+		MenuItem('Popular', 'movies.popular'),
+		# adds top rated selection
+		MenuItem('Top Rated', 'movies.top_rated'),
+		# adds now playing selection
+		MenuItem('Now Playing', 'movies.now_playing'),
+		# adds upcoming selection
+		MenuItem('Upcoming', 'movies.upcoming'),
+		# adds genres selection
+		MenuItem('Genres', 'movies.genres'),
+		# adds years selection
+		MenuItem('Years', 'movies.years'),
+		# adds search selection
+		# MenuItem('Search', 'build_text')
+	)
+	# builds our menu
+	GUI.build_menu('Movies', *menu)
+
+# builds the tv menu
+elif params['action'] == 'menu.tv':
+	# creates our menu
+	menu = (
+		# adds popular selection
+		MenuItem('Popular', 'tv.popular', 'popular.png'),
+		# adds top rated selection
+		MenuItem('Top Rated', 'tv.top_rated'),
+		# adds now playing selection
+		MenuItem('Now Playing', 'tv.now_playing'),
+		# adds upcoming selection
+		MenuItem('Upcoming', 'tv.upcoming'),
+		# adds genres selection
+		MenuItem('Genres', 'tv.genres'),
+		# adds years selection
+		MenuItem('Years', 'tv.years'),
+		# adds search selection
+		# MenuItem('Search', 'build_text', 'search_shows')
+	)
+	# builds our menu
+	GUI.build_menu('Television', *menu)
+
+# builds the movie genre menu
+elif params['action'] == 'movies.genres':
+	# creates our menu
+	menu = (MenuItem(genre, 'movies.genre') for genre in TMDB.get_genres('movie').keys())
+	# builds our menu
+	GUI.build_menu('Genres', *menu)
+
+# builds the movie years menu
+elif params['action'] == 'movies.years':
+	# creates our menu
+	menu = (MenuItem(str(year), 'movies.year') for year in xrange(datetime.now().year, 1900, -1))
+	# builds our menu
+	GUI.build_menu('Years', *menu)
+
+# builds the tv years menu
+elif params['action'] == 'tv.genres':
+	# creates our menu
+	menu = (MenuItem(genre, 'tv.genre') for genre in TMDB.get_genres('tv').keys())
+	# builds our menu
+	GUI.build_menu('Genres', *menu)
+
+# builds the tv years menu
+elif params['action'] == 'tv.years':
+	# creates our menu
+	menu = (MenuItem(str(year), 'tv.year') for year in xrange(datetime.now().year, 1900, -1))
+	# builds our menu
+	GUI.build_menu('Years', *menu)
+
+# builds a popular movie page
+elif params['action'] == 'movies.popular':
+	# gets the popuar movie listings
+	listings = TMDB.get_movies_by_category('popular', params['page'])
+	# builds a movie page with the listings
+	GUI.build_movie_page('Popular', 'movies.popular', params['page'], *listings)
+
+# builds a top rated movie page
+elif params['action'] == 'movies.top_rated':
+	# gets the top rated movie listings
+	listings = TMDB.get_movies_by_category('top_rated', params['page'])
+	# builds a movie page with the listings
+	GUI.build_movie_page('Top Rated', 'movies.top_rated', params['page'], *listings)
+
+# builds a now playing movie page
+elif params['action'] == 'movies.now_playing':
+	# gets the now playing movie listings
+	listings = TMDB.get_movies_by_category('now_playing', params['page'])
+	# builds a movie page with the listings
+	GUI.build_movie_page('Now Playing', 'movies.now_playing', params['page'], *listings)
+
+# builds a upcoming movie page
+elif params['action'] == 'movies.upcoming':
+	# gets the upcoming show listings
+	listings = TMDB.get_movies_by_category('upcoming', params['page'])
+	# builds a movie page with the listings
+	GUI.build_movie_page('Upcoming', 'movies.upcoming', params['page'], *listings)
+
+# builds a movie genre page
+elif params['action'] == 'movies.genre':
+	# gets the movie listings by genre
+	listings = TMDB.get_movies_by_genre(params['title'], params['page'])
+	# builds a movie page with the listings
+	GUI.build_movie_page(params['title'], 'movies.genre', params['page'], *listings)
+
+# builds a movie year page
+elif params['action'] == 'movies.year':
+	# gets the movie listings by year
+	listings = TMDB.get_movies_by_year(params['title'], params['page'])
+	# builds a movie page with the listings
+	GUI.build_movie_page(params['title'], 'movies.year', params['page'], *listings)
+
+# builds a popular movie page
+elif params['action'] == 'tv.popular':
+	# gets the popuar show listings
+	listings = TMDB.get_shows_by_category('popular', params['page'])
+	# builds a movie page with the listings
+	GUI.build_tv_page('Popular', 'movies.popular', params['page'], *listings)
+
+# builds a top rated tv page
+elif params['action'] == 'tv.top_rated':
+	# gets the top rated show listings
+	listings = TMDB.get_shows_by_category('top_rated', params['page'])
+	# builds a movie page with the listings
+	GUI.build_tv_page('Top Rated', 'movies.top_rated', params['page'], *listings)
+
+# builds a now playing tv page
+elif params['action'] == 'tv.now_playing':
+	# gets the now playing show listings
+	listings = TMDB.get_shows_by_category('now_playing', params['page'])
+	# builds a movie page with the listings
+	GUI.build_tv_page('Now Playing', 'movies.now_playing', params['page'], *listings)
+
+# builds a upcoming tv page
+elif params['action'] == 'tv.upcoming':
+	# gets the upcoming show listings
+	listings = TMDB.get_shows_by_category('upcoming', params['page'])
+	# builds a movie page with the listings
+	GUI.build_tv_page('Upcoming', 'movies.upcoming', params['page'], *listings)
+
+# builds a tv genre page
+elif params['action'] == 'tv.genre':
+	# gets the show listings by genre
+	listings = TMDB.get_shows_by_genre(params['title'], params['page'])
+	# builds a movie page with the listings
+	GUI.build_tv_page(params['title'], 'movies.genre', params['page'], *listings)
+
+# builds a tv year page
+elif params['action'] == 'tv.year':
+	# gets the show listings by year
+	listings = TMDB.get_shows_by_year(params['title'], params['page'])
+	# builds a movie page with the listings
+	GUI.build_tv_page(params['title'], 'movies.year', params['page'], *listings)
+
+elif params['action'] == 'tv.season':
+	# gets listings of category
+	listings = TMDB.get_show_seasons(params['id'])
+	# builds a page with the listings
+	GUI.build_series_page(params['title'], params['id'], params['backdrop'], *listings)
+
+elif params['action'] == 'tv.episodes':
+	# gets listings of category
+	listings = TMDB.get_season_episodes(params['id'], params['season'])
+	# builds a page with the listings
+	GUI.build_episode_page(params['title'], params['backdrop'], *listings)
+
+elif params['action'] == 'tv.play':
+	pass
+
+elif params['action'] == 'movie.play':
+	# gets our movie stream url
+	stream_url = OneMovies.get_movie_stream_url(params['title'], params['date'].split('-')[0])
+	# plays the movie
+	xbmc.Player().play(stream_url)
