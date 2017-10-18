@@ -4,9 +4,9 @@ from urlparse import parse_qsl
 from datetime import datetime
 
 # imports our scrapers and modules
-from resources.lib.scrapers.OneMovies import OneMovies
-from resources.lib.scrapers.TMDB import TMDB
-from resources.lib.modules.UI import UI, MenuItem
+from resources.lib.scrapers.OneMovies import *
+from resources.lib.scrapers.TMDB import *
+from resources.lib.modules.UI import *
 
 # KODI WORKS BY CALLING OUR ADDON WHEN A USER CLICKS IT
 # THE ADDONS SETS THE STATES (SETS UP UI) THEN CALLS KODI
