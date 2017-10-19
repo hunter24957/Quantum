@@ -3,8 +3,10 @@ import sys
 from urlparse import parse_qsl
 from datetime import datetime
 
+import xbmcgui
+
 # imports our scrapers and modules
-from resources.lib.scrapers.OneMovies import *
+from resources.lib.modules.MovieGrabber import *
 from resources.lib.scrapers.TMDB import *
 from resources.lib.modules.UI import *
 
@@ -207,7 +209,25 @@ elif params['action'] == 'tv.play':
 	pass
 
 elif params['action'] == 'movie.play':
-	# gets our movie stream url
-	stream_url = OneMovies.get_movie_stream_url(params['title'], params['date'].split('-')[0])
-	# plays the movie
-	xbmc.Player().play(stream_url)
+	# gets the movie streams
+	streams = MovieGrabber.get_streams(params['title'], params['date'].split('-')[0])
+	# if there are any streams
+	if streams:
+		# stores our stream titles
+		stream_titles = list()
+		# stores our stream urls
+		stream_urls = list()
+		# iterates through dict
+		for title, url in streams.iteritems():
+			# appends title
+			stream_titles.append(title)
+			# appends url
+			stream_urls.append(url)
+		# creates a dialog box
+		selected_item = xbmcgui.Dialog().select(params['title'], stream_titles)
+		# indexes our list
+		selected_stream = stream_urls[selected_item]
+		# plays the movie
+		xbmc.Player().play(selected_stream)
+	# else we notifiy the user
+	else: xbmcgui.Dialog().notification('Sorry', 'No stream found')

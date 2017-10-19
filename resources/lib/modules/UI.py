@@ -61,8 +61,8 @@ class UI:
 		# sets up our attributes
 		self.handle = handle
 		self.address = address
-		# gets the addon path
-		self.path = xbmcaddon.Addon().getAddonInfo('path')
+		# gets the addon media path
+		self.media_path = xbmcaddon.Addon().getAddonInfo('path') + '\\resources\\media\\'
 
 	# creates main menu
 	def build_menu(self, title, *args):
@@ -75,22 +75,10 @@ class UI:
 			# creates a list item
 			category_item = xbmcgui.ListItem(category.title)
 			# sets images
-			category_item.setArt({
-				'thumb': self.path + '\\resources\\media\\' + category.icon,
-				#'icon': self.path + category.icon,
-				'fanart': self.path + '\\resources\\media\\fanart.jpg',
-			})
+			category_item.setArt({'thumb': self.media_path + category.icon, 'icon': self.media_path +  category.icon, 'fanart': self.media_path + 'fanart.jpg'})
 			# adds list item as directory
-			xbmcplugin.addDirectoryItem(
-				# adds our application handle
-				self.handle,
-				# where we're doign and where we're going
-				self.create_params(action=category.action, title=category.title, page=1),
-				# adds our created item
-				category_item,
-				# THIS IS A FOLDER!
-				True
-			)
+			xbmcplugin.addDirectoryItem(self.handle, self.create_params(action=category.action, title=category.title, page=1), category_item, True)
+		# sets the view to wall
 		xbmc.executebuiltin("Container.SetViewMode(500)")
 		# ends the directory
 		xbmcplugin.endOfDirectory(self.handle)
@@ -198,7 +186,7 @@ class UI:
 		# creates a next page button
 		category_item = xbmcgui.ListItem('Next Page')
 		# sets the list item info
-		category_item.setArt({'fanart': self.path + '\\resources\\media\\fanart.jpg'})
+		category_item.setArt({'fanart': self.media_path + 'fanart.jpg'})
 		# increments page
 		page = int(page) + 1
 		# adds list item as directory

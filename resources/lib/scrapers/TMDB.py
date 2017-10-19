@@ -17,6 +17,8 @@ class TMDB:
 	def get_movies_by_category(category='popular', page=1):
 		# stores our found listings
 		found_listings = set()
+		# filters name
+		category = '_'.join(category.split()).lower()
 		# creates search params
 		search_params = {'api_key': TMDB.api_key, 'page': page}
 		# gets results from api
